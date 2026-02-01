@@ -35,7 +35,7 @@
 <div id="loginScreen">
   <div class="neon-card">
     <img src="imagen/Logo.jpg" class="w-24 h-24 mx-auto rounded-full mb-6 border-2 border-[#00f2ff] shadow-[0_0_15px_#00f2ff]" alt="Logo García">
-    <h2 class="text-[#00f2ff] font-bold mb-6 tracking-widest text-xl uppercase">Acceso García</h2>
+    <h2 class="text-[#00f2ff] font-bold mb-6 tracking-widest text-xl uppercase">Accesorios García</h2>
     <div class="space-y-4 text-left">
       <input type="text" id="userInput" placeholder="Usuario" class="neon-input uppercase text-sm">
       <input type="password" id="passInput" placeholder="Contraseña" class="neon-input text-sm">
@@ -94,20 +94,24 @@
         </div>
 
         <form id="formP" class="space-y-4">
-          <input type="text" id="pSku" placeholder="Código SKU" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
-          <div class="flex gap-2">
-            <select id="pTipo" class="w-1/3 p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm font-bold text-cyan-600">
-              <option value="salida">Venta 📤</option>
-              <option value="entrada">Stock 📥</option>
-            </select>
-            <input type="text" id="pNom" placeholder="Nombre Producto" class="w-2/3 p-3 rounded-xl ring-1 ring-slate-200 text-sm outline-none">
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="pCos" placeholder="Costo $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
-            <input type="number" id="pPre" placeholder="Venta $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
-          </div>
-          <button type="submit" class="w-full btn-action font-bold py-3 uppercase text-xs">Registrar Movimiento</button>
-        </form>
+  <input type="text" id="pSku" placeholder="Código SKU" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
+  
+  <div class="flex gap-2">
+    <select id="pTipo" class="w-1/3 p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm font-bold text-cyan-600">
+      <option value="salida">Venta 📤</option>
+      <option value="entrada">Stock 📥</option>
+    </select>
+    <input type="number" id="pCant" placeholder="Cant." value="1" min="1" class="w-1/4 p-3 rounded-xl ring-1 ring-slate-200 text-sm outline-none">
+    <input type="text" id="pNom" placeholder="Nombre Producto" class="w-2/3 p-3 rounded-xl ring-1 ring-slate-200 text-sm outline-none">
+  </div>
+
+  <div class="grid grid-cols-2 gap-2">
+    <input type="number" id="pCos" placeholder="Costo $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
+    <input type="number" id="pPre" placeholder="Venta $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
+  </div>
+  
+  <button type="button" onclick="registrarMovimiento()" class="w-full btn-action font-bold py-3 uppercase text-xs">Registrar Movimiento</button>
+</form>
         
 
    
@@ -221,16 +225,31 @@
     
     let vProd=0, uProdTotal=0, pPendiente=0, uRifasTotal=0;
 
-    if(tabActual === 1) { // VENTAS
-        document.getElementById('historialTitulo').innerText = "Historial de Ventas/Stock";
-        thead.innerHTML = '<th class="p-3">Sku</th><th class="p-3">Producto</th><th class="p-3">Utilidad</th><th class="p-3">Acción</th>';
-        DB.productos.forEach((p, i) => {
-            let u = p.tipo === 'salida' ? (p.pre - p.cos) : 0;
-            if(p.tipo === 'salida') { vProd += p.pre; uProdTotal += u; }
-            lista.innerHTML += `<tr><td class="p-3 font-mono">${p.sku||'--'}</td><td class="p-3 font-bold">${p.nom}</td><td class="p-3 text-emerald-600">$${u.toFixed(2)}</td><td class="p-3"><button onclick="borrarProd(${i})" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`;
-        });
+   if(tabActual === 1) { // VENTAS
+    document.getElementById('historialTitulo').innerText = "Historial de Ventas/Stock";
+    // Agregamos "Cant." a los encabezados
+    thead.innerHTML = '<th class="p-3">Cant.</th><th class="p-3">Producto</th><th class="p-3">Utilidad</th><th class="p-3">Acción</th>';
+    
+    DB.productos.forEach((p, i) => {
+        let u = p.tipo === 'salida' ? (p.pre - p.cos) : 0;
+        if(p.tipo === 'salida') { 
+            vProd += p.pre; 
+            uProdTotal += u; 
         }
-
+        
+        lista.innerHTML += `
+            <tr>
+                <td class="p-3 text-center font-mono bg-slate-50 rounded-l-lg">${p.cant || 1}x</td>
+                <td class="p-3 font-bold">${p.nom} <br><span class="text-[10px] text-slate-400">${p.sku || '--'}</span></td>
+                <td class="p-3 text-emerald-600 font-bold">$${u.toFixed(2)}</td>
+                <td class="p-3 rounded-r-lg">
+                    <button onclick="borrarProd(${i})" class="text-red-400 hover:text-red-600 transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+    });
+}
 
    else if (tabActual === 2) { // RIFAS
         document.getElementById('historialTitulo').innerText = "Registro de Rifas";
