@@ -10,51 +10,24 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <style>
-    /* Estilo General */
-    body { background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 50%, #f0f9ff 100%); min-height: 100vh; font-family: 'Poppins', sans-serif; color: #1e293b; }
-    
+    /* Estilo General preservado */
+    body { background: linear-gradient(135deg, #c4f1db 0%, #ffffff 50%, #888dbd 100%); min-height: 100vh; font-family: 'Poppins', sans-serif; color: #1e293b; }
     .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0, 242, 255, 0.3); border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 180, 216, 0.1); }
     .tab-active { color: #0ea5e9; border-bottom: 3px solid #0ea5e9; font-weight: 700; }
     .btn-action { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border-radius: 12px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3); }
     .btn-action:active { transform: scale(0.95); }
 
-    /* LOGIN FONDO NEGRO (Neon Style) */
-    #loginScreen { 
-        background-color: #000000; 
-        position: fixed; 
-        inset: 0; 
-        z-index: 9999; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-    }
-    .neon-card { 
-        background: #0a0a0a; 
-        border: 2px solid #00f2ff; 
-        box-shadow: 0 0 20px rgba(0, 242, 255, 0.5); 
-        padding: 40px; 
-        border-radius: 20px; 
-        width: 320px; 
-        text-align: center;
-    }
-    .neon-input { 
-        background: transparent; 
-        border: 1px solid #00f2ff; 
-        color: white; 
-        padding: 12px; 
-        border-radius: 10px; 
-        outline: none; 
-        width: 100%;
-        margin-bottom: 15px;
-    }
+    /* LOGIN FONDO NEGRO ORIGINAL */
+    #loginScreen { background-color: #000000; position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .neon-card { background: #0a0a0a; border: 2px solid #00f2ff; box-shadow: 0 0 20px rgba(0, 242, 255, 0.5); padding: 40px; border-radius: 20px; width: 320px; text-align: center; }
+    .neon-input { background: transparent; border: 1px solid #00f2ff; color: white; padding: 12px; border-radius: 10px; outline: none; width: 100%; margin-bottom: 15px; }
     .neon-input:focus { box-shadow: 0 0 10px #00f2ff; }
 
     #reader { border: 2px solid #00f2ff !important; border-radius: 15px; overflow: hidden; background: white; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
   </style>
 </head>
 <body class="p-2 md:p-6">
@@ -66,7 +39,7 @@
     <div class="space-y-4 text-left">
       <input type="text" id="userInput" placeholder="Usuario" class="neon-input uppercase text-sm">
       <input type="password" id="passInput" placeholder="Contraseña" class="neon-input text-sm">
-      <button onclick="intentarLogin()" class="btn-action w-full py-3 mt-4 font-bold uppercase tracking-widest text-xs shadow-[0_0_10px_#00d2ff]">ENTRAR</button>
+      <button onclick="intentarLogin()" class="btn-action w-full py-3 mt-4 font-bold uppercase tracking-widest text-xs">ENTRAR</button>
     </div>
     <p id="loginError" class="text-red-500 text-[10px] mt-4 hidden font-bold italic">⚠️ DATOS INCORRECTOS</p>
   </div>
@@ -81,7 +54,7 @@
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
     <div class="glass-card p-4 border-l-4 border-sky-400">
-      <p class="text-[9px] font-bold text-slate-400 uppercase">Caja Ventas</p>
+      <p class="text-[9px] font-bold text-slate-400 uppercase">Ventas</p>
       <p id="resVentas" class="text-lg font-bold text-slate-700">$0.00</p>
     </div>
     <div class="glass-card p-4 border-l-4 border-amber-500">
@@ -89,7 +62,7 @@
       <p id="resRifas" class="text-lg font-bold text-amber-700">$0.00</p>
     </div>
     <div class="glass-card p-4 border-l-4 border-purple-400">
-      <p class="text-[9px] font-bold text-slate-400 uppercase">Pendiente Pedidos</p>
+      <p class="text-[9px] font-bold text-slate-400 uppercase">Por Cobrar (Pedidos)</p>
       <p id="resPedidos" class="text-lg font-bold text-slate-700">$0.00</p>
     </div>
     <div class="glass-card p-4 bg-emerald-600 text-white">
@@ -99,18 +72,15 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    
     <div class="lg:col-span-5 space-y-6">
       <div class="glass-card p-4">
-        <h3 class="text-xs font-bold text-cyan-600 uppercase mb-4 italic"><i class="fas fa-barcode mr-2"></i>Lector de Barras</h3>
+        <h3 class="text-xs font-bold text-cyan-600 uppercase mb-4 italic"><i class="fas fa-barcode mr-2"></i>Escáner</h3>
         <div id="reader"></div>
-        <div id="scanResult" class="mt-4 p-3 bg-cyan-50 rounded-xl border border-cyan-200 text-xs hidden">
-          <p class="text-cyan-700 font-bold italic">CÓDIGO: <span id="codeVal" class="text-slate-800 font-mono"></span></p>
+        <div id="scanResult" class="mt-4 p-3 bg-cyan-50 rounded-xl border border-cyan-200 text-xs hidden text-center">
+            <p id="stockAlert" class="font-bold"></p>
         </div>
       </div>
-
-      <div class="glass-card p-6 flex flex-col items-center">
-        <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Balance de Utilidades</h3>
+      <div class="glass-card p-6">
         <canvas id="chartGarcia" style="max-height: 200px;"></canvas>
       </div>
     </div>
@@ -124,7 +94,7 @@
         </div>
 
         <form id="formP" class="space-y-4">
-          <input type="text" id="pSku" placeholder="Código (Escanear o escribir)" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
+          <input type="text" id="pSku" placeholder="Código SKU" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
           <div class="flex gap-2">
             <select id="pTipo" class="w-1/3 p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm font-bold text-cyan-600">
               <option value="salida">Venta 📤</option>
@@ -138,60 +108,64 @@
           </div>
           <button type="submit" class="w-full btn-action font-bold py-3 uppercase text-xs">Registrar Movimiento</button>
         </form>
+        
 
-        <div id="formR" class="hidden space-y-4">
-            <input type="text" id="rNom" placeholder="Nombre de la Rifa" class="w-full p-3 rounded-xl ring-1 ring-amber-300 text-sm outline-none">
-            <div class="grid grid-cols-2 gap-2">
-              <input type="number" id="rCosto" placeholder="Costo Premio $" class="p-3 rounded-xl ring-1 ring-amber-300 text-sm">
-              <input type="number" id="rCant" placeholder="Núms Vendidos" class="p-3 rounded-xl ring-1 ring-amber-300 text-sm">
-            </div>
-            <button onclick="guardarRifa()" class="w-full py-3 rounded-xl bg-amber-600 text-white font-bold uppercase text-xs">Guardar Rifa</button>
+   
+
+        <div id="formRifa" class="hidden space-y-4">
+          <input type="hidden" id="editRifaIndex" value="-1">
+          <input type="text" id="rNom" placeholder="Nombre de la Rifa" class="w-full p-3 rounded-xl ring-1 ring-amber-300 text-sm outline-none uppercase">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="rCosto" placeholder="Costo Premio $" class="p-3 rounded-xl ring-1 ring-amber-300 text-sm">
+            <input type="number" id="rCant" placeholder="Boletos Vendidos" class="p-3 rounded-xl ring-1 ring-amber-300 text-sm">
+          </div>
+          <div class="flex gap-2">
+            <button onclick="guardarRifa()" id="btnSaveRifa" class="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold uppercase text-xs shadow-md">Guardar Rifa</button>
+            <button onclick="cancelarEdicionRifa()" id="btnCancelRifa" class="hidden px-4 rounded-xl bg-slate-200 text-slate-600"><i class="fas fa-times"></i></button>
+          </div>
         </div>
 
+        
+
         <div id="formPe" class="hidden space-y-4">
-          <input type="text" id="peCli" placeholder="Nombre Cliente" class="w-full p-3 rounded-xl ring-1 ring-purple-300 text-sm outline-none">
-          <input type="text" id="pePro" placeholder="Producto" class="w-full p-3 rounded-xl ring-1 ring-purple-300 text-sm outline-none">
+          <input type="hidden" id="editPedidoIndex" value="-1">
+          <input type="text" id="peCli" placeholder="Nombre Cliente" class="w-full p-3 rounded-xl ring-1 ring-purple-300 text-sm">
+          <input type="text" id="pePro" placeholder="Producto/Detalle" class="w-full p-3 rounded-xl ring-1 ring-purple-300 text-sm">
           <div class="grid grid-cols-2 gap-2">
             <input type="number" id="peTot" placeholder="Total $" class="p-3 rounded-xl ring-1 ring-purple-300 text-sm">
             <input type="number" id="peAnt" placeholder="Anticipo $" class="p-3 rounded-xl ring-1 ring-purple-300 text-sm">
           </div>
-          <button onclick="guardarPedido()" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold uppercase text-xs">Registrar Pedido</button>
+          <div class="flex gap-2">
+            <button onclick="guardarPedido()" id="btnSavePedido" class="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold uppercase text-xs">Guardar Pedido</button>
+            <button onclick="cancelarEdicionPedido()" id="btnCancelEdit" class="hidden px-4 rounded-xl bg-slate-200 text-slate-600"><i class="fas fa-times"></i></button>
+          </div>
         </div>
       </div>
 
       <div class="glass-card p-4 overflow-hidden">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-[10px] font-bold text-slate-500 uppercase italic">Historial</h3>
+          <h3 id="historialTitulo" class="text-[10px] font-bold text-slate-500 uppercase italic">Historial de Ventas</h3>
           <button onclick="exportarExcel()" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold">EXCEL</button>
         </div>
         <div class="overflow-x-auto max-h-[300px]">
           <table class="w-full text-left text-[11px]">
             <thead class="bg-slate-50 sticky top-0">
-              <tr>
-                <th class="p-3">Sku</th>
-                <th class="p-3">Producto</th>
-                <th class="p-3">Utilidad</th>
-                <th class="p-3"></th>
-              </tr>
+              <tr id="theadRow"></tr>
             </thead>
-            <tbody id="listaP" class="divide-y divide-slate-100"></tbody>
+            <tbody id="listaDinamica" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
-        <button onclick="borrarTodo()" class="w-full mt-4 text-[8px] text-slate-300 font-bold uppercase hover:text-red-500 transition">Reiniciar Base de Datos</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Configuración de Usuarios
   const users = { 'proveedor': 'garcia77', 'administrador': 'admin2026', 'encargado': 'ventas01' };
-  
-  // Base de Datos Local
   let DB = JSON.parse(localStorage.getItem('ag_v_final')) || { productos: [], rifas: [], pedidos: [] };
   let myChart;
+  let tabActual = 1;
 
-  // Login
   function intentarLogin() {
     const u = document.getElementById('userInput').value.toLowerCase();
     const p = document.getElementById('passInput').value;
@@ -206,47 +180,99 @@
     }
   }
 
-  // Lector de Barras
   function initScanner() {
     const scanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
     scanner.render((text) => {
       document.getElementById('pSku').value = text;
-      document.getElementById('codeVal').innerText = text;
-      document.getElementById('scanResult').classList.remove('hidden');
+      notificarDisponibles(text);
     });
   }
 
-  // Cambio de Pestañas
+  // FUNCIÓN: Notificar stock disponible
+  function notificarDisponibles(sku) {
+    const entradas = DB.productos.filter(p => p.sku === sku && p.tipo === 'entrada').length;
+    const salidas = DB.productos.filter(p => p.sku === sku && p.tipo === 'salida').length;
+    const stock = entradas - salidas;
+    
+    const alertBox = document.getElementById('scanResult');
+    const alertText = document.getElementById('stockAlert');
+    alertBox.classList.remove('hidden');
+    alertText.innerText = `PRODUCTO: ${sku} | DISPONIBLES EN STOCK: ${stock}`;
+    alertText.className = stock > 0 ? "text-emerald-600 font-bold" : "text-red-500 font-bold";
+  }
+
   function setTab(t) {
-    document.getElementById('formP').classList.toggle('hidden', t!==1);
-    document.getElementById('formR').classList.toggle('hidden', t!==2);
-    document.getElementById('formPe').classList.toggle('hidden', t!==3);
-    [1,2,3].forEach(i => {
-      document.getElementById('tab'+i).className = i===t ? "tab-active pb-2 text-xs uppercase font-bold" : "text-slate-400 pb-2 text-xs uppercase font-bold";
-    });
-  }
+  tabActual = t;
+  // Control de visibilidad de formularios
+  document.getElementById('formP').classList.toggle('hidden', t !== 1);
+  document.getElementById('formRifa').classList.toggle('hidden', t !== 2); // Agrega esta línea
+  document.getElementById('formPe').classList.toggle('hidden', t !== 3);
+  
+  [1,2,3].forEach(i => {
+    document.getElementById('tab'+i).className = i===t ? "tab-active pb-2 text-xs uppercase font-bold" : "text-slate-400 pb-2 text-xs uppercase font-bold";
+  });
+  actualizar();
+}
 
-  // Lógica Principal
   function actualizar() {
-    const lp = document.getElementById('listaP');
-    lp.innerHTML = '';
+    const lista = document.getElementById('listaDinamica');
+    const thead = document.getElementById('theadRow');
+    lista.innerHTML = '';
+    
     let vProd=0, uProdTotal=0, pPendiente=0, uRifasTotal=0;
 
-    DB.productos.forEach((p, i) => {
-      let u = p.tipo === 'salida' ? (p.pre - p.cos) : 0;
-      if(p.tipo === 'salida') { vProd += p.pre; uProdTotal += u; }
-      lp.innerHTML += `
-        <tr>
-          <td class="p-3 font-mono text-cyan-600">${p.sku || '---'}</td>
-          <td class="p-3 font-bold text-slate-700 uppercase">${p.nom}</td>
-          <td class="p-3 font-bold text-emerald-600">$${u.toFixed(2)}</td>
-          <td class="p-3 text-right"><button onclick="borrarP(${i})" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button></td>
-        </tr>`;
-    });
+    if(tabActual === 1) { // VENTAS
+        document.getElementById('historialTitulo').innerText = "Historial de Ventas/Stock";
+        thead.innerHTML = '<th class="p-3">Sku</th><th class="p-3">Producto</th><th class="p-3">Utilidad</th><th class="p-3">Acción</th>';
+        DB.productos.forEach((p, i) => {
+            let u = p.tipo === 'salida' ? (p.pre - p.cos) : 0;
+            if(p.tipo === 'salida') { vProd += p.pre; uProdTotal += u; }
+            lista.innerHTML += `<tr><td class="p-3 font-mono">${p.sku||'--'}</td><td class="p-3 font-bold">${p.nom}</td><td class="p-3 text-emerald-600">$${u.toFixed(2)}</td><td class="p-3"><button onclick="borrarProd(${i})" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+        }
+
+
+   else if (tabActual === 2) { // RIFAS
+        document.getElementById('historialTitulo').innerText = "Registro de Rifas";
+        thead.innerHTML = '<th class="p-3">Nombre Rifa</th><th class="p-3">Utilidad</th><th class="p-3">Acciones</th>';
+        DB.rifas.forEach((r, i) => {
+            let utilRifa = (r.cant * 10) - r.costo;
+            lista.innerHTML += `<tr>
+                <td class="p-3 font-bold uppercase">${r.nom}</td>
+                <td class="p-3 text-amber-600 font-bold">$${utilRifa.toFixed(2)}</td>
+                <td class="p-3 space-x-2">
+                    <button onclick="editarRifa(${i})" class="text-amber-500"><i class="fas fa-edit"></i></button>
+                    <button onclick="borrarRifa(${i})" class="text-red-400"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+    }
+    
+
+
+
+
+
+
+    else if (tabActual === 3) { // PEDIDOS (CRUD)
+        document.getElementById('historialTitulo').innerText = "Gestión de Pedidos";
+        thead.innerHTML = '<th class="p-3">Cliente</th><th class="p-3">Debe</th><th class="p-3">Acciones</th>';
+        DB.pedidos.forEach((pe, i) => {
+            let saldo = pe.total - pe.pagado;
+            pPendiente += saldo;
+            lista.innerHTML += `<tr>
+                <td class="p-3 font-bold">${pe.cliente}<br><span class="text-[9px] text-slate-400">${pe.producto}</span></td>
+                <td class="p-3 text-red-500 font-bold">$${saldo.toFixed(2)}</td>
+                <td class="p-3 space-x-2">
+                    <button onclick="descargarTicket(${i})" class="text-blue-500" title="PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button onclick="editarPedido(${i})" class="text-amber-500" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button onclick="borrarPedido(${i})" class="text-red-400" title="Borrar"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+    }
 
     DB.rifas.forEach(r => uRifasTotal += (r.cant * 10) - r.costo);
-    DB.pedidos.forEach(pe => pPendiente += (pe.total - pe.pagado));
-
     document.getElementById('resVentas').innerText = `$${vProd.toFixed(2)}`;
     document.getElementById('resRifas').innerText = `$${uRifasTotal.toFixed(2)}`;
     document.getElementById('resPedidos').innerText = `$${pPendiente.toFixed(2)}`;
@@ -256,6 +282,82 @@
     renderChart(uProdTotal, uRifasTotal);
   }
 
+  // --- LOGICA CRUD PEDIDOS ---
+  function guardarPedido() {
+    const index = parseInt(document.getElementById('editPedidoIndex').value);
+    const pe = {
+        cliente: document.getElementById('peCli').value.toUpperCase(),
+        producto: document.getElementById('pePro').value.toUpperCase(),
+        total: parseFloat(document.getElementById('peTot').value) || 0,
+        pagado: parseFloat(document.getElementById('peAnt').value) || 0
+    };
+
+    if(pe.cliente === "") return alert("Falta nombre del cliente");
+
+    if(index === -1) {
+        DB.pedidos.push(pe);
+    } else {
+        DB.pedidos[index] = pe;
+        cancelarEdicionPedido();
+    }
+    
+    actualizar();
+    document.getElementById('peCli').value = "";
+    document.getElementById('pePro').value = "";
+    document.getElementById('peTot').value = "";
+    document.getElementById('peAnt').value = "";
+  }
+
+  function editarPedido(i) {
+    const pe = DB.pedidos[i];
+    document.getElementById('peCli').value = pe.cliente;
+    document.getElementById('pePro').value = pe.producto;
+    document.getElementById('peTot').value = pe.total;
+    document.getElementById('peAnt').value = pe.pagado;
+    document.getElementById('editPedidoIndex').value = i;
+    
+    document.getElementById('btnSavePedido').innerText = "Actualizar Pedido";
+    document.getElementById('btnCancelEdit').classList.remove('hidden');
+    window.scrollTo(0,0);
+  }
+
+  function cancelarEdicionPedido() {
+    document.getElementById('editPedidoIndex').value = "-1";
+    document.getElementById('btnSavePedido').innerText = "Guardar Pedido";
+    document.getElementById('btnCancelEdit').classList.add('hidden');
+    document.getElementById('peCli').value = "";
+    document.getElementById('pePro').value = "";
+    document.getElementById('peTot').value = "";
+    document.getElementById('peAnt').value = "";
+  }
+
+  function borrarPedido(i) { if(confirm("¿Eliminar pedido?")) { DB.pedidos.splice(i,1); actualizar(); } }
+  function borrarProd(i) { DB.productos.splice(i,1); actualizar(); }
+
+  // --- FUNCIÓN PDF ---
+  function descargarTicket(i) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: [80, 150] }); // Formato ticket
+    const pe = DB.pedidos[i];
+
+    doc.setFontSize(12);
+    doc.text("ACCESORIOS GARCIA", 40, 10, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text("------------------------------------------", 40, 15, { align: 'center' });
+    doc.text(`CLIENTE: ${pe.cliente}`, 5, 25);
+    doc.text(`PRODUCTO: ${pe.producto}`, 5, 30);
+    doc.text(`TOTAL: $${pe.total.toFixed(2)}`, 5, 40);
+    doc.text(`ANTICIPO: $${pe.pagado.toFixed(2)}`, 5, 45);
+    doc.setFontSize(10);
+    doc.text(`RESTA: $${(pe.total - pe.pagado).toFixed(2)}`, 5, 55);
+    doc.setFontSize(8);
+    doc.text("------------------------------------------", 40, 65, { align: 'center' });
+    doc.text("Gracias por su preferencia", 40, 75, { align: 'center' });
+
+    doc.save(`Pedido_${pe.cliente}.pdf`);
+  }
+
+  // Resto de funciones (Chart, FormP, Excel)
   function renderChart(up, ur) {
     const ctx = document.getElementById('chartGarcia').getContext('2d');
     if(myChart) myChart.destroy();
@@ -268,43 +370,75 @@
 
   document.getElementById('formP').onsubmit = (e) => {
     e.preventDefault();
+    const sku = document.getElementById('pSku').value;
     DB.productos.push({
-      sku: document.getElementById('pSku').value,
+      sku: sku,
       tipo: document.getElementById('pTipo').value,
       nom: document.getElementById('pNom').value.toUpperCase(),
       cos: parseFloat(document.getElementById('pCos').value) || 0,
       pre: parseFloat(document.getElementById('pPre').value) || 0
     });
-    actualizar(); e.target.reset();
+    actualizar();
+    notificarDisponibles(sku);
+    e.target.reset();
+  };
+   
+  // --- LOGICA RIFAS ---
+  function guardarRifa() {
+  const index = parseInt(document.getElementById('editRifaIndex').value);
+  const rifa = {
+    nom: document.getElementById('rNom').value.toUpperCase(),
+    costo: parseFloat(document.getElementById('rCosto').value) || 0,
+    cant: parseInt(document.getElementById('rCant').value) || 0
   };
 
-  function guardarRifa() {
-    DB.rifas.push({ 
-        nom: document.getElementById('rNom').value.toUpperCase(), 
-        costo: parseFloat(document.getElementById('rCosto').value)||0, 
-        cant: parseInt(document.getElementById('rCant').value)||0 
-    });
-    actualizar(); setTab(1);
-  }
+  if(rifa.nom === "") return alert("Falta nombre de la rifa");
 
-  function guardarPedido() {
-    DB.pedidos.push({ 
-        cliente: document.getElementById('peCli').value.toUpperCase(), 
-        total: parseFloat(document.getElementById('peTot').value)||0, 
-        pagado: parseFloat(document.getElementById('peAnt').value)||0 
-    });
-    actualizar(); setTab(1);
+  if(index === -1) {
+    DB.rifas.push(rifa); // Crear nueva
+  } else {
+    DB.rifas[index] = rifa; // Actualizar existente
+    cancelarEdicionRifa();
   }
+  
+  actualizar();
+  // Limpiar campos manualmente tras guardar nuevo
+  if(index === -1) {
+    document.getElementById('rNom').value = "";
+    document.getElementById('rCosto').value = "";
+    document.getElementById('rCant').value = "";
+  }
+}
 
-  function borrarP(i) { DB.productos.splice(i, 1); actualizar(); }
-  function borrarTodo() { if(confirm("¿Borrar todo?")) { DB={productos:[], rifas:[], pedidos:[]}; actualizar(); } }
+function editarRifa(i) {
+  const r = DB.rifas[i];
+  document.getElementById('rNom').value = r.nom;
+  document.getElementById('rCosto').value = r.costo;
+  document.getElementById('rCant').value = r.cant;
+  document.getElementById('editRifaIndex').value = i;
+  
+  document.getElementById('btnSaveRifa').innerText = "Actualizar Rifa";
+  document.getElementById('btnCancelRifa').classList.remove('hidden');
+  window.scrollTo(0,0); // Sube la pantalla para ver el formulario
+}
+
+function cancelarEdicionRifa() {
+  document.getElementById('editRifaIndex').value = "-1";
+  document.getElementById('btnSaveRifa').innerText = "Guardar Rifa";
+  document.getElementById('btnCancelRifa').classList.add('hidden');
+  document.getElementById('rNom').value = "";
+  document.getElementById('rCosto').value = "";
+  document.getElementById('rCant').value = "";
+}
+
+
+
 
   function exportarExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(DB.productos), "Ventas");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(DB.rifas), "Rifas");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(DB.pedidos), "Pedidos");
-    XLSX.writeFile(wb, "Reporte_Garcia_Pro.xlsx");
+    XLSX.writeFile(wb, "Reporte_Garcia.xlsx");
   }
 </script>
 </body>
