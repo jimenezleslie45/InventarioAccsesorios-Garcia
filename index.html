@@ -12,6 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <!-- Firebase SDK -->
@@ -60,6 +61,33 @@
     .neon-input:focus { box-shadow: 0 0 10px #00f2ff; }
 
     #reader { border: 2px solid #00f2ff !important; border-radius: 15px; overflow: hidden; background: white; }
+
+    /* Efectos adicionales para botones y secciones */
+    .sidebar-btn { transition: all 0.3s ease; transform-origin: center; }
+    .sidebar-btn:hover { transform: translateX(10px) scale(1.05); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+    .sidebar-btn:active { transform: translateX(5px) scale(0.98); }
+
+    .glass-card { transition: all 0.3s ease; }
+    .glass-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 180, 216, 0.2); }
+
+    .modal-content { animation: fadeInUp 0.5s ease-out; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(58, 123, 213, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(58, 123, 213, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(58, 123, 213, 0); }
+    }
+
+    .section-fade-in { animation: sectionFadeIn 0.6s ease-out; }
+    @keyframes sectionFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
   </style>
 </head>
 <body class="p-2 md:p-6">
@@ -106,6 +134,12 @@
       </button>
       <button onclick="setSection('reportes')" class="sidebar-btn w-full text-left py-3 px-4 rounded-lg bg-slate-700 hover:bg-cyan-600 transition-all duration-300 transform hover:scale-105 shadow-md">
         <i class="fas fa-chart-bar mr-3"></i>Reportes
+      </button>
+      <button onclick="mostrarCatalogo()" class="sidebar-btn w-full text-left py-3 px-4 rounded-lg bg-slate-700 hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md">
+        <i class="fas fa-store mr-3"></i>Catálogo
+      </button>
+      <button onclick="mostrarEnlaceCatalogo()" class="sidebar-btn w-full text-left py-3 px-4 rounded-lg bg-slate-700 hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-md">
+        <i class="fas fa-link mr-3"></i>Enlace Catálogo
       </button>
     </nav>
   </aside>
@@ -282,6 +316,19 @@
           <input type="number" id="prodCant" placeholder="Cant." value="1" min="1" class="w-1/4 p-3 rounded-xl ring-1 ring-slate-200 text-sm outline-none">
           <input type="text" id="prodNom" placeholder="Nombre Producto" class="w-2/3 p-3 rounded-xl ring-1 ring-slate-200 text-sm outline-none">
         </div>
+        <select id="prodCategoria" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm font-bold text-purple-600">
+          <option value="">Seleccionar Categoría</option>
+          <option value="calzado-dama">Calzado de Dama</option>
+          <option value="calzado-caballero">Calzado de Caballero</option>
+          <option value="calzado-nino">Calzado de Niño</option>
+          <option value="cancan-dama">Cañclas de Dama</option>
+          <option value="cancan-caballero">Cañclas de Caballero</option>
+          <option value="cancan-nino">Cañclas de Niño</option>
+          <option value="mochilas-cuero">Mochilas de Cuero</option>
+          <option value="pulseras-plata">Pulseras de Plata</option>
+        </select>
+        <textarea id="prodDesc" placeholder="Descripción del producto" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none" rows="3"></textarea>
+        <input type="file" id="prodImagen" accept="image/*" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
         <div class="grid grid-cols-2 gap-2">
           <input type="number" id="prodCos" placeholder="Costo $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
           <input type="number" id="prodPre" placeholder="Precio $" class="p-3 rounded-xl ring-1 ring-slate-200 text-sm">
@@ -338,6 +385,7 @@
       <form id="formFactura" class="space-y-4">
         <input type="text" id="fCliente" placeholder="Cliente" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
         <input type="text" id="fProductos" placeholder="Productos (separados por coma)" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
+        <input type="number" id="fCant" placeholder="Cantidad Total" value="1" min="1" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
         <input type="number" id="fTotal" placeholder="Total $" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm outline-none">
         <button type="submit" class="w-full btn-action font-bold py-3 uppercase text-xs">Generar Factura</button>
       </form>
@@ -356,6 +404,40 @@
       <button onclick="cerrarModal('modalReportes')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
     </div>
   </div>
+
+  <div id="modalCatalogo" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-6xl transform transition-all duration-300 scale-95 hover:scale-100 shadow-2xl">
+      <h3 class="text-xl font-bold text-pink-600 mb-4 uppercase">Catálogo de Productos</h3>
+      <div class="mb-4">
+        <select id="categoriaFilter" onchange="filtrarCatalogo()" class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm font-bold text-purple-600">
+          <option value="">Todas las Categorías</option>
+          <option value="calzado-dama">Calzado de Dama</option>
+          <option value="calzado-caballero">Calzado de Caballero</option>
+          <option value="calzado-nino">Calzado de Niño</option>
+          <option value="cancan-dama">Cañclas de Dama</option>
+          <option value="cancan-caballero">Cañclas de Caballero</option>
+          <option value="cancan-nino">Cañclas de Niño</option>
+          <option value="mochilas-cuero">Mochilas de Cuero</option>
+          <option value="pulseras-plata">Pulseras de Plata</option>
+        </select>
+      </div>
+      <div id="catalogoProductos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto"></div>
+      <button onclick="cerrarModal('modalCatalogo')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div id="modalEnlaceCatalogo" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-95 hover:scale-100 shadow-2xl">
+      <h3 class="text-xl font-bold text-green-600 mb-4 uppercase">Enlace y QR del Catálogo</h3>
+      <p class="text-sm text-slate-600 mb-4">Comparte este enlace o QR para que los clientes vean el catálogo:</p>
+      <input type="text" id="enlaceCatalogo" readonly class="w-full p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-sm mb-4" value="">
+      <div class="text-center mb-4">
+        <canvas id="qrCatalogo" style="max-width: 200px;"></canvas>
+      </div>
+      <button onclick="copiarEnlace()" class="w-full btn-action font-bold py-3 uppercase text-xs mb-2">Copiar Enlace</button>
+      <button onclick="cerrarModal('modalEnlaceCatalogo')" class="w-full bg-slate-200 text-slate-600 py-3 rounded-xl font-bold uppercase text-xs">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -363,6 +445,18 @@
   let DB = { productos: [], rifas: [], pedidos: [], facturas: [] };
   let myChart;
   let tabActual = 1;
+  let isClientMode = false; // Modo cliente para ver solo catálogo
+
+  // Verificar si es modo cliente (solo catálogo)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'cliente') {
+    isClientMode = true;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('app').querySelector('aside').style.display = 'none';
+    document.getElementById('app').querySelector('main').style.width = '100%';
+    mostrarCatalogo();
+  }
 
   // Firebase initialization (assuming it's loaded)
   let firebaseDB;
@@ -983,15 +1077,33 @@ function cancelarEdicionRifa() {
   document.getElementById('formNuevoProducto').onsubmit = async (e) => {
     e.preventDefault();
     const nom = document.getElementById('prodNom').value.toUpperCase();
+    const categoria = document.getElementById('prodCategoria').value;
+    const desc = document.getElementById('prodDesc').value;
+    const imagenFile = document.getElementById('prodImagen').files[0];
+
     if (nom === "") return alert("Nombre de producto obligatorio");
+    if (categoria === "") return alert("Selecciona una categoría");
+
+    let imagenBase64 = '';
+    if (imagenFile) {
+      imagenBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(imagenFile);
+      });
+    }
 
     const producto = {
       sku: document.getElementById('prodSku').value,
       tipo: document.getElementById('prodTipo').value,
       nom: nom,
+      categoria: categoria,
+      desc: desc,
+      imagen: imagenBase64,
       cos: parseFloat(document.getElementById('prodCos').value) || 0,
       pre: parseFloat(document.getElementById('prodPre').value) || 0,
-      cant: parseInt(document.getElementById('prodCant').value) || 1
+      cant: parseInt(document.getElementById('prodCant').value) || 1,
+      fecha: new Date().toISOString()
     };
     DB.productos.push(producto);
     await saveToFirebase('productos', producto);
@@ -1005,13 +1117,17 @@ function cancelarEdicionRifa() {
     const factura = {
       cliente: document.getElementById('fCliente').value,
       productos: document.getElementById('fProductos').value,
+      cant: parseInt(document.getElementById('fCant').value) || 1,
       total: parseFloat(document.getElementById('fTotal').value) || 0,
       fecha: new Date().toISOString()
     };
     DB.facturas = DB.facturas || [];
     DB.facturas.push(factura);
     await saveToFirebase('facturas', factura);
-    alert('Factura generada');
+
+    // Generar factura visual con logo
+    generarFacturaVisual(factura);
+
     cerrarModal('modalFacturacion');
     e.target.reset();
   };
@@ -1053,6 +1169,109 @@ function cancelarEdicionRifa() {
     doc.text(`Ventas: ${document.getElementById('resVentas').innerText}`, 20, 40);
     doc.text(`Pedidos Pendientes: ${document.getElementById('resPedidos').innerText}`, 20, 50);
     doc.save("Reporte_Garcia.pdf");
+  }
+
+  // --- FUNCIONES PARA CATÁLOGO ---
+  function mostrarCatalogo() {
+    document.getElementById('modalCatalogo').classList.remove('hidden');
+    filtrarCatalogo();
+  }
+
+  function filtrarCatalogo() {
+    const categoria = document.getElementById('categoriaFilter').value;
+    const container = document.getElementById('catalogoProductos');
+    container.innerHTML = '';
+
+    let productosFiltrados = DB.productos.filter(p => p.tipo === 'entrada'); // Solo productos en stock
+
+    if (categoria) {
+      productosFiltrados = productosFiltrados.filter(p => p.categoria === categoria);
+    }
+
+    productosFiltrados.forEach(p => {
+      const stock = DB.productos.filter(prod => prod.sku === p.sku && prod.tipo === 'entrada').length -
+                   DB.productos.filter(prod => prod.sku === p.sku && prod.tipo === 'salida').length;
+
+      if (stock > 0) {
+        const imagenSrc = p.imagen || 'imagen/Logo.jpg'; // Fallback al logo si no hay imagen
+        container.innerHTML += `
+          <div class="glass-card p-4 hover:scale-105 transition-transform">
+            <img src="${imagenSrc}" alt="${p.nom}" class="w-full h-32 object-cover rounded-lg mb-3">
+            <h4 class="font-bold text-lg text-slate-800">${p.nom}</h4>
+            <p class="text-sm text-slate-600 mb-2">${p.desc || 'Sin descripción'}</p>
+            <p class="text-sm text-slate-600">Categoría: ${p.categoria || 'Sin categoría'}</p>
+            <p class="text-lg font-bold text-emerald-600">$${p.pre.toFixed(2)}</p>
+            <p class="text-sm text-slate-500">Stock disponible: ${stock}</p>
+          </div>
+        `;
+      }
+    });
+
+    if (productosFiltrados.length === 0) {
+      container.innerHTML = '<p class="text-center text-slate-500">No hay productos en esta categoría</p>';
+    }
+  }
+
+  // --- FUNCIONES PARA ENLACE Y QR DEL CATÁLOGO ---
+  function mostrarEnlaceCatalogo() {
+    const enlace = window.location.origin + window.location.pathname + '?mode=cliente';
+    document.getElementById('enlaceCatalogo').value = enlace;
+    document.getElementById('modalEnlaceCatalogo').classList.remove('hidden');
+
+    // Generar QR
+    const canvas = document.getElementById('qrCatalogo');
+    QRCode.toCanvas(canvas, enlace, { width: 200, height: 200 }, function (error) {
+      if (error) console.error(error);
+    });
+  }
+
+  function copiarEnlace() {
+    const enlaceInput = document.getElementById('enlaceCatalogo');
+    enlaceInput.select();
+    document.execCommand('copy');
+    alert('Enlace copiado al portapapeles');
+  }
+
+  // --- FUNCIÓN PARA GENERAR FACTURA VISUAL CON LOGO ---
+  function generarFacturaVisual(factura) {
+    const facturaVirtual = document.createElement('div');
+
+    // Estilo para la factura
+    facturaVirtual.style = "width: 400px; padding: 20px; background: white; text-align: center; font-family: sans-serif; position: fixed; left: -9999px; top: 0; border: 2px solid #0ea5e9; border-radius: 15px;";
+
+    facturaVirtual.innerHTML = `
+        <div style="text-align: center;">
+            <img src="imagen/Logo.jpg" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #0ea5e9; margin-bottom: 15px;">
+            <h1 style="margin: 0; color: #1e293b; font-size: 24px; text-transform: uppercase; font-weight: bold;">Accesorios García</h1>
+            <p style="font-size: 12px; color: #94a3b8; margin: 5px 0;">Factura de Venta</p>
+            <p style="font-size: 10px; color: #94a3b8;">------------------------------------------</p>
+        </div>
+        <div style="text-align: left; font-size: 14px; color: #334155; margin-top: 20px;">
+            <p><b>Cliente:</b> ${factura.cliente}</p>
+            <p><b>Productos:</b> ${factura.productos}</p>
+            <p><b>Cantidad Total:</b> ${factura.cant} unidades</p>
+            <p><b>Total:</b> $${factura.total.toFixed(2)}</p>
+            <p><b>Fecha:</b> ${new Date(factura.fecha).toLocaleDateString()}</p>
+        </div>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 20px;">------------------------------------------</p>
+        <p style="font-size: 12px; font-weight: bold; color: #0ea5e9;">¡Gracias por su preferencia!</p>
+    `;
+
+    document.body.appendChild(facturaVirtual);
+
+    // Pequeño tiempo de espera para que html2canvas capture el logo cargado
+    setTimeout(() => {
+        html2canvas(facturaVirtual, { useCORS: true }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Factura_${factura.cliente}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.body.removeChild(facturaVirtual);
+        }).catch(err => {
+            console.error("Error al generar factura:", err);
+            document.body.removeChild(facturaVirtual);
+        });
+    }, 500);
   }
 </script>
 </body>
